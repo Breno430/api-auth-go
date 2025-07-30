@@ -3,7 +3,9 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 
+	"api-auth-go/internal/infrastructure/services"
 	"api-auth-go/internal/presentation/handlers"
+	"api-auth-go/internal/presentation/middleware"
 )
 
 func SetupRoutes(userHandler *handlers.UserHandler) *gin.Engine {
@@ -28,6 +30,14 @@ func SetupRoutes(userHandler *handlers.UserHandler) *gin.Engine {
 	userRoutes := router.Group("/api/v1/users")
 	{
 		userRoutes.POST("/signup", userHandler.CreateUser)
+		userRoutes.POST("/login", userHandler.Login)
+	}
+
+	jwtService := services.NewJWTService()
+	protectedRoutes := router.Group("/api/v1")
+	protectedRoutes.Use(middleware.AuthMiddleware(jwtService))
+	{
+		protectedRoutes.GET("/profile", userHandler.GetProfile)
 	}
 
 	return router

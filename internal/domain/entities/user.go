@@ -59,3 +59,32 @@ func (u *User) CheckPassword(password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
 	return err == nil
 }
+
+func ValidateLoginData(email, password string) error {
+	if strings.TrimSpace(email) == "" {
+		return errors.New("email is required")
+	}
+
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	if !emailRegex.MatchString(email) {
+		return errors.New("invalid email format")
+	}
+
+	if len(email) > 255 {
+		return errors.New("email is too long (maximum 255 characters)")
+	}
+
+	if strings.TrimSpace(password) == "" {
+		return errors.New("password is required")
+	}
+
+	if len(password) < 6 {
+		return errors.New("password must be at least 6 characters")
+	}
+
+	if len(password) > 128 {
+		return errors.New("password is too long (maximum 128 characters)")
+	}
+
+	return nil
+}
