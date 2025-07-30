@@ -1,0 +1,40 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+README.md
+*.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+*.tmp
+
+# Test files
+*_test.go
+testdata/
+
+# Air
+.air.toml
+
+# Scripts (except docker-dev.sh)
+scripts/*
+!scripts/docker-dev.sh 
