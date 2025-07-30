@@ -1,114 +1,196 @@
 # API Auth Go
 
-API de autenticação desenvolvida em Go com Gin, GORM e PostgreSQL.
+Uma API de autenticação desenvolvida em Go com Gin, GORM e PostgreSQL.
 
-## 🚀 Executando Localmente
+## 🚀 Tecnologias
 
-### Pré-requisitos
-- Go 1.24+
-- PostgreSQL
-- Air (para hot-reload)
+- **Go 1.23.5** - Linguagem de programação
+- **Gin** - Framework web
+- **GORM** - ORM para Go
+- **PostgreSQL** - Banco de dados
+- **JWT** - Autenticação
+- **Docker** - Containerização
 
-### Instalação
+## 📋 Pré-requisitos
 
-1. Clone o repositório:
-```bash
-git clone <repository-url>
-cd api-auth-go
-```
+- Docker
+- Docker Compose
 
-2. Instale as dependências:
-```bash
-go mod download
-```
+## 🐳 Executando com Docker
 
-3. Instale o Air para hot-reload:
-```bash
-go install github.com/air-verse/air@latest
-```
-
-4. Configure o PostgreSQL:
-```bash
-# Inicie o PostgreSQL
-sudo systemctl start postgresql
-
-# Crie o banco de dados (se não existir)
-sudo -u postgres psql -c "CREATE DATABASE auth_api_dev;"
-```
-
-### Executando a aplicação
-
-#### Opção 1: Com Air (Recomendado para desenvolvimento)
-```bash
-air
-```
-
-#### Opção 2: Execução direta
-```bash
-go run ./cmd/api
-```
-
-A aplicação estará disponível em `http://localhost:8080`
-
-### Comandos úteis
-
-- **Verificar status do PostgreSQL:**
-```bash
-sudo systemctl status postgresql@14-main
-```
-
-- **Iniciar PostgreSQL:**
-```bash
-sudo systemctl start postgresql
-```
-
-- **Parar PostgreSQL:**
-```bash
-sudo systemctl stop postgresql
-```
-
-- **Testar conexão com o banco:**
-```bash
-psql -h localhost -U postgres -d auth_api_dev
-```
-
-## 🔧 Desenvolvimento
-
-### Hot Reload com Air
-
-A aplicação está configurada com Air para hot reload. Qualquer alteração nos arquivos `.go` irá automaticamente recompilar e reiniciar a aplicação.
-
-O arquivo `.air.toml` já está configurado para monitorar as mudanças.
-
-### Variáveis de Ambiente
-
-As variáveis de ambiente são carregadas automaticamente com valores padrão. Para personalizar, você pode definir as seguintes variáveis:
+### Ambiente de Desenvolvimento (com Hot Reload)
 
 ```bash
-# Application
-export PORT=8080
-export JWT_SECRET=your-secret-key-change-in-production
+# Usando Makefile (recomendado)
+make up
 
-# Database
-export DB_HOST=localhost
-export DB_PORT=5432
-export DB_USER=postgres
-export DB_PASSWORD=postgres
-export DB_NAME=auth_api_dev
-export DB_SSLMODE=disable
+# Ou em background
+make up-d
+
+# Ou diretamente com docker-compose
+docker-compose up --build
+docker-compose up -d --build
 ```
 
-**Valores padrão:**
-- `PORT`: 8080
-- `DB_HOST`: localhost
-- `DB_PORT`: 5432
-- `DB_USER`: postgres
-- `DB_PASSWORD`: postgres
-- `DB_NAME`: auth_api_dev
-- `DB_SSLMODE`: disable
-- `JWT_SECRET`: your-secret-key
+## 🛠️ Comandos Úteis
 
-### Estrutura do Projeto
+### Com Makefile (Recomendado)
+```bash
+# Ver todos os comandos disponíveis
+make help
+
+# Iniciar ambiente
+make up
+
+# Parar ambiente
+make down
+
+# Ver logs da API
+make logs
+
+# Ver logs do banco
+make logs-db
+
+# Acessar shell da API
+make shell
+
+# Acessar shell do banco
+make shell-db
+
+# Verificar status
+make status
+
+# Limpar ambiente
+make clean
+```
+
+### Com Docker Compose Diretamente
+```bash
+# Parar os containers
+docker-compose down
+
+# Parar e remover volumes
+docker-compose down -v
+
+# Ver logs
+docker-compose logs -f api
+
+# Acessar container da API
+docker-compose exec api sh
+
+# Acessar container do PostgreSQL
+docker-compose exec postgres psql -U postgres -d auth_api_dev
+```
+
+## 🔧 Variáveis de Ambiente
+
+As variáveis de ambiente são carregadas do arquivo `.env`. O Docker Compose usa as seguintes variáveis:
+
+| Variável | Descrição |
+|----------|-----------|
+| `PORT` | Porta da API |
+| `DB_HOST` | Host do banco de dados (usado como `postgres` no container) |
+| `DB_PORT` | Porta do banco de dados |
+| `DB_USER` | Usuário do banco |
+| `DB_PASSWORD` | Senha do banco |
+| `DB_NAME` | Nome do banco |
+| `DB_SSLMODE` | Modo SSL do banco |
+| `JWT_SECRET` | Chave secreta do JWT |
+
+**Nota**: No ambiente Docker, o `DB_HOST` é automaticamente definido como `postgres` (nome do container).
+
+### Configuração Inicial
+
+```bash
+# Verificar se o arquivo .env existe
+make check-env
+
+# Configurar ambiente (cria .env se não existir)
+make setup
+```
+
+### Exemplo de Arquivo .env
+
+```env
+# Server Configuration
+PORT=8080
+
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=auth_api_dev
+DB_SSLMODE=disable
+
+# JWT Configuration
+JWT_SECRET=your-secret-key-change-in-production
+```
+
+**⚠️ Segurança**: Em produção, sempre altere as senhas padrão e chaves secretas!
+
+## 📊 Endpoints
+
+A API estará disponível em `http://localhost:8080`
+
+### Endpoints de Saúde
+- `GET /health` - Verificar status da API
+
+### Endpoints de Usuário
+- `POST /users/register` - Registrar novo usuário
+- `POST /users/login` - Fazer login
+- `GET /users/profile` - Obter perfil do usuário (requer autenticação)
+
+## 🗄️ Banco de Dados
+
+O PostgreSQL será executado com as credenciais definidas no arquivo `.env`:
+- **Host**: localhost
+- **Porta**: Definida em `DB_PORT` (padrão: 5432)
+- **Database**: Definido em `DB_NAME` (padrão: auth_api_dev)
+- **Usuário**: Definido em `DB_USER` (padrão: postgres)
+- **Senha**: Definida em `DB_PASSWORD` (padrão: postgres)
+
+## 🔄 Hot Reload (Desenvolvimento)
+
+No ambiente de desenvolvimento, a API usa o [Air](https://github.com/cosmtrek/air) para hot reload automático. Qualquer alteração no código será automaticamente recompilada e reiniciada.
+
+
+
+## 🛠️ Makefile
+
+O projeto inclui um Makefile completo com comandos úteis para desenvolvimento:
+
+### Comandos Disponíveis
+```bash
+# Ver todos os comandos disponíveis
+make help
+
+# Iniciar ambiente de desenvolvimento
+make up
+
+# Iniciar em background
+make up-d
+
+# Parar ambiente
+make down
+
+# Ver logs da API
+make logs
+
+# Acessar shell da API
+make shell
+
+# Limpar ambiente
+make clean
+
+# Verificar arquivo .env
+make check-env
+
+# Configurar ambiente
+make setup
+```
+
+## 📁 Estrutura do Projeto
 
 ```
 api-auth-go/
@@ -124,49 +206,32 @@ api-auth-go/
 │   │   ├── config/
 │   │   ├── database/
 │   │   ├── repositories/
-│   │   └── server/
+│   │   ├── server/
+│   │   └── services/
 │   └── presentation/
 │       ├── handlers/
+│       ├── middleware/
 │       └── routes/
+├── Dockerfile
+├── docker-compose.yml
+├── Makefile
 ├── .air.toml
-└── go.mod
+└── .dockerignore
 ```
 
-## 📝 Endpoints
+## 🚨 Segurança
 
-### Health Check
-- `GET /health` - Verificar status da aplicação
+⚠️ **Importante**: Em produção, sempre altere as senhas padrão e chaves secretas configuradas no Docker Compose.
 
-### Usuários
-- `POST /users` - Criar usuário
-- `GET /users/:id` - Buscar usuário por ID
-- `PUT /users/:id` - Atualizar usuário
-- `DELETE /users/:id` - Deletar usuário
+## 🔄 Hot Reload
 
-## 🛠️ Tecnologias
+O ambiente usa o [Air](https://github.com/cosmtrek/air) para hot reload automático. Qualquer alteração no código será automaticamente recompilada e reiniciada.
 
-- **Go 1.24**
-- **Gin** - Framework web
-- **GORM** - ORM para Go
-- **PostgreSQL** - Banco de dados
-- **Air** - Hot reload para desenvolvimento
+## 📝 Migrations
 
-## 🐛 Troubleshooting
+As migrations do GORM serão executadas automaticamente quando a aplicação iniciar. Certifique-se de que suas migrations estão configuradas corretamente no código.
 
-### Problemas comuns
+## 📚 Documentação Adicional
 
-1. **Erro de conexão com PostgreSQL:**
-   - Verifique se o PostgreSQL está rodando: `sudo systemctl status postgresql@14-main`
-   - Inicie o serviço: `sudo systemctl start postgresql`
-
-2. **Air não encontrado:**
-   - Instale o Air: `go install github.com/air-verse/air@latest`
-   - O Air será automaticamente adicionado ao PATH
-
-3. **Erro de compilação:**
-   - Verifique se todas as dependências estão instaladas: `go mod download`
-   - Limpe o cache: `go clean -cache`
-
-4. **Porta já em uso:**
-   - Verifique se não há outro processo na porta 8080: `lsof -i :8080`
-   - Mude a porta nas variáveis de ambiente: `export PORT=8081` 
+- [ENV_VARIABLES.md](ENV_VARIABLES.md) - Documentação completa das variáveis de ambiente
+- [Makefile](Makefile) - Comandos disponíveis para desenvolvimento 
