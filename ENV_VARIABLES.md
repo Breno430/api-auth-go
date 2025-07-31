@@ -75,7 +75,4 @@ EMAIL_FROM=your-email@gmail.com
 EMAIL_PASSWORD=your-app-password
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-
-# SMS Configuration
-# Nota: SMS temporariamente desabilitado
 ``` 

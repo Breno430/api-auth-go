@@ -96,6 +96,10 @@ As variáveis de ambiente são carregadas do arquivo `.env`. O Docker Compose us
 | `DB_NAME` | Nome do banco |
 | `DB_SSLMODE` | Modo SSL do banco |
 | `JWT_SECRET` | Chave secreta do JWT |
+| `EMAIL_FROM` | Email remetente para envio |
+| `EMAIL_PASSWORD` | Senha de app do email |
+| `SMTP_HOST` | Servidor SMTP |
+| `SMTP_PORT` | Porta do servidor SMTP |
 
 **Nota**: No ambiente Docker, o `DB_HOST` é automaticamente definido como `postgres` (nome do container).
 
