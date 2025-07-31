@@ -223,6 +223,148 @@ api-auth-go/
 └── .dockerignore
 ```
 
+## 📧 Configuração do Serviço de Email
+
+Para que a funcionalidade de recuperação de senha funcione corretamente, você precisa configurar o serviço de email. Aqui estão as instruções para diferentes provedores:
+
+### 🔧 Configuração para Gmail (Recomendado)
+
+#### **1. Ativar Autenticação de 2 Fatores**
+1. Acesse: https://myaccount.google.com/security
+2. Ative "Verificação em duas etapas"
+
+#### **2. Gerar Senha de App**
+1. Acesse: https://myaccount.google.com/apppasswords
+2. Selecione "Email" e "Outro (nome personalizado)"
+3. Digite "API Auth Go" como nome
+4. Clique em "Gerar"
+5. **Copie a senha gerada (16 caracteres)**
+
+#### **3. Configurar Variáveis de Ambiente**
+Adicione ao seu arquivo `.env`:
+
+```env
+# Email Configuration (Gmail)
+EMAIL_FROM=seu-email@gmail.com
+EMAIL_PASSWORD=sua-senha-de-app-gerada
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+```
+
+**Exemplo:**
+```env
+EMAIL_FROM=joao.silva@gmail.com
+EMAIL_PASSWORD=abcd efgh ijkl mnop
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+```
+
+### 📧 Configuração para Outlook/Hotmail
+
+```env
+EMAIL_FROM=seu-email@outlook.com
+EMAIL_PASSWORD=sua-senha-de-app
+SMTP_HOST=smtp-mail.outlook.com
+SMTP_PORT=587
+```
+
+### 📧 Configuração para Yahoo
+
+```env
+EMAIL_FROM=seu-email@yahoo.com
+EMAIL_PASSWORD=sua-senha-de-app
+SMTP_HOST=smtp.mail.yahoo.com
+SMTP_PORT=587
+```
+
+### 📧 Configuração para ProtonMail
+
+```env
+EMAIL_FROM=seu-email@protonmail.com
+EMAIL_PASSWORD=sua-senha-de-app
+SMTP_HOST=127.0.0.1
+SMTP_PORT=1025
+```
+
+### 🧪 Testando o Envio de Email
+
+#### **1. Iniciar a Aplicação**
+```bash
+make up
+```
+
+#### **2. Cadastrar um Usuário**
+```bash
+curl -X POST http://localhost:8080/api/v1/users/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Teste Usuario",
+    "email": "seu-email@gmail.com",
+    "password": "123456"
+  }'
+```
+
+#### **3. Solicitar Recuperação de Senha**
+```bash
+curl -X POST http://localhost:8080/api/v1/password-reset/request \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "seu-email@gmail.com"
+  }'
+```
+
+#### **4. Verificar os Logs**
+```bash
+# Ver logs da aplicação
+make logs
+
+# Logs esperados:
+# 2024/01/15 10:30:00 Email de recuperação enviado para: seu-email@gmail.com
+```
+
+#### **5. Verificar o Email**
+1. Abra seu email (Gmail)
+2. Procure por um email com assunto "Recuperação de Senha"
+3. O email conterá um PIN de 6 dígitos
+
+### 🚨 Troubleshooting
+
+#### **Erro: "authentication failed"**
+- Verifique se a senha de app está correta
+- Certifique-se de que a autenticação de 2 fatores está ativada
+- Gere uma nova senha de app se necessário
+
+#### **Erro: "connection refused"**
+- Verifique se o SMTP_HOST e SMTP_PORT estão corretos
+- Teste a conectividade: `telnet smtp.gmail.com 587`
+
+#### **Erro: "invalid credentials"**
+- Use a senha de app, não a senha normal da conta
+- Verifique se o email está correto
+
+### 🔧 Configuração Alternativa (Sem Email Real)
+
+Se você não quiser configurar um email real, pode modificar o `EmailService` para apenas logar:
+
+```go
+// Em internal/infrastructure/services/email_service.go
+func (es *EmailService) SendPasswordResetEmail(to, name, token string) error {
+    log.Printf("SIMULAÇÃO: Email enviado para %s com token %s", to, token)
+    return nil
+}
+```
+
+### 📋 Checklist de Configuração
+
+- [ ] Ativar autenticação de 2 fatores no Gmail
+- [ ] Gerar senha de app
+- [ ] Configurar arquivo `.env` com as variáveis
+- [ ] Reiniciar a aplicação
+- [ ] Testar cadastro de usuário
+- [ ] Testar solicitação de recuperação
+- [ ] Verificar logs da aplicação
+- [ ] Verificar recebimento do email
+
 ## 🚨 Segurança
 
 ⚠️ **Importante**: Em produção, sempre altere as senhas padrão e chaves secretas configuradas no Docker Compose.
