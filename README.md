@@ -125,6 +125,12 @@ DB_SSLMODE=disable
 
 # JWT Configuration
 JWT_SECRET=your-secret-key-change-in-production
+
+# Email Configuration
+EMAIL_FROM=seu-email@gmail.com
+EMAIL_PASSWORD=sua-senha-de-app-gerada
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
 ```
 
 **⚠️ Segurança**: Em produção, sempre altere as senhas padrão e chaves secretas!
