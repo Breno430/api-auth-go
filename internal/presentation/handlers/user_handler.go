@@ -70,3 +70,35 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 		"message": "Profile retrieved successfully",
 	})
 }
+
+func (h *UserHandler) RequestPasswordReset(c *gin.Context) {
+	var input usecases.RequestPasswordResetInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	output, err := h.userUseCase.RequestPasswordReset(c.Request.Context(), input)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, output)
+}
+
+func (h *UserHandler) ResetPassword(c *gin.Context) {
+	var input usecases.ResetPasswordInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	output, err := h.userUseCase.ResetPassword(c.Request.Context(), input)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, output)
+}

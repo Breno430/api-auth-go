@@ -4,7 +4,7 @@ Uma API de autenticação desenvolvida em Go com Gin, GORM e PostgreSQL.
 
 ## 🚀 Tecnologias
 
-- **Go 1.23.5** - Linguagem de programação
+- **Go** - Linguagem de programação
 - **Gin** - Framework web
 - **GORM** - ORM para Go
 - **PostgreSQL** - Banco de dados
@@ -137,9 +137,13 @@ A API estará disponível em `http://localhost:8080`
 - `GET /health` - Verificar status da API
 
 ### Endpoints de Usuário
-- `POST /users/register` - Registrar novo usuário
-- `POST /users/login` - Fazer login
-- `GET /users/profile` - Obter perfil do usuário (requer autenticação)
+- `POST /api/v1/users/signup` - Registrar novo usuário
+- `POST /api/v1/users/login` - Fazer login
+- `GET /api/v1/profile` - Obter perfil do usuário (requer autenticação)
+
+### Endpoints de Recuperação de Senha
+- `POST /api/v1/password-reset/request` - Solicitar recuperação de senha
+- `POST /api/v1/password-reset/reset` - Redefinir senha com token
 
 ## 🗄️ Banco de Dados
 

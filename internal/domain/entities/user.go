@@ -88,3 +88,33 @@ func ValidateLoginData(email, password string) error {
 
 	return nil
 }
+
+func ValidateResetPasswordInput(token, password string) error {
+	if strings.TrimSpace(token) == "" {
+		return errors.New("token is required")
+	}
+
+	if len(token) != 6 {
+		return errors.New("token must be 6 digits")
+	}
+
+	for _, char := range token {
+		if char < '0' || char > '9' {
+			return errors.New("token must contain only digits")
+		}
+	}
+
+	if strings.TrimSpace(password) == "" {
+		return errors.New("password is required")
+	}
+
+	if len(password) < 6 {
+		return errors.New("password must be at least 6 characters")
+	}
+
+	if len(password) > 128 {
+		return errors.New("password is too long (maximum 128 characters)")
+	}
+
+	return nil
+}

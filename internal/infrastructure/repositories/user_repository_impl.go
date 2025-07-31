@@ -53,3 +53,7 @@ func (r *UserRepositoryImpl) ExistsByEmail(ctx context.Context, email string) (b
 	err := r.db.WithContext(ctx).Model(&entities.User{}).Where("email = ?", email).Count(&count).Error
 	return count > 0, err
 }
+
+func (r *UserRepositoryImpl) Update(ctx context.Context, user *entities.User) error {
+	return r.db.WithContext(ctx).Save(user).Error
+}

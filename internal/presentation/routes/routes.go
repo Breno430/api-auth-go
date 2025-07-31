@@ -33,6 +33,12 @@ func SetupRoutes(userHandler *handlers.UserHandler) *gin.Engine {
 		userRoutes.POST("/login", userHandler.Login)
 	}
 
+	passwordResetRoutes := router.Group("/api/v1/password-reset")
+	{
+		passwordResetRoutes.POST("/request", userHandler.RequestPasswordReset)
+		passwordResetRoutes.POST("/reset", userHandler.ResetPassword)
+	}
+
 	jwtService := services.NewJWTService()
 	protectedRoutes := router.Group("/api/v1")
 	protectedRoutes.Use(middleware.AuthMiddleware(jwtService))
