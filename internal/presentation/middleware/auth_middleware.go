@@ -42,6 +42,56 @@ func AuthMiddleware(jwtService *services.JWTService) gin.HandlerFunc {
 		c.Set("user_id", claims.UserID)
 		c.Set("user_email", claims.Email)
 		c.Set("user_name", claims.Name)
+		c.Set("user_role", claims.Role)
+
+		c.Next()
+	}
+}
+
+func AdminMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userRole := c.GetString("user_role")
+		if userRole != "admin" {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "Access denied. Admin role required",
+			})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
+func RoleBasedAccessMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userRole := c.GetString("user_role")
+		userID := c.GetString("user_id")
+		requestedUserID := c.Param("id")
+
+		if requestedUserID != "" {
+			if userRole == "admin" {
+				c.Next()
+				return
+			}
+
+			if userID != requestedUserID {
+				c.JSON(http.StatusForbidden, gin.H{
+					"error": "Access denied. You can only access your own data",
+				})
+				c.Abort()
+				return
+			}
+
+			if c.Request.Method == "DELETE" {
+				if userRole == "user" {
+					c.JSON(http.StatusForbidden, gin.H{
+						"error": "Access denied. Users cannot delete themselves",
+					})
+					c.Abort()
+					return
+				}
+			}
+		}
 
 		c.Next()
 	}

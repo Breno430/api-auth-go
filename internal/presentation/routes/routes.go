@@ -27,9 +27,9 @@ func SetupRoutes(userHandler *handlers.UserHandler) *gin.Engine {
 	healthHandler := handlers.NewHealthHandler()
 	router.GET("/health", healthHandler.HealthCheck)
 
+	// Rotas públicas
 	userRoutes := router.Group("/api/v1/users")
 	{
-		userRoutes.POST("/signup", userHandler.CreateUser)
 		userRoutes.POST("/login", userHandler.Login)
 	}
 
@@ -40,10 +40,25 @@ func SetupRoutes(userHandler *handlers.UserHandler) *gin.Engine {
 	}
 
 	jwtService := services.NewJWTService()
+
+	// Rotas protegidas (todos os usuários autenticados)
 	protectedRoutes := router.Group("/api/v1")
 	protectedRoutes.Use(middleware.AuthMiddleware(jwtService))
+	protectedRoutes.Use(middleware.RoleBasedAccessMiddleware())
 	{
 		protectedRoutes.GET("/profile", userHandler.GetProfile)
+		protectedRoutes.GET("/users", userHandler.ListUsers)
+		protectedRoutes.GET("/users/:id", userHandler.GetUserByID)
+		protectedRoutes.PUT("/users/:id", userHandler.UpdateUser)
+		protectedRoutes.DELETE("/users/:id", userHandler.DeleteUser)
+	}
+
+	// Rotas de administração (apenas admins)
+	adminRoutes := router.Group("/api/v1/admin")
+	adminRoutes.Use(middleware.AuthMiddleware(jwtService))
+	adminRoutes.Use(middleware.AdminMiddleware())
+	{
+		adminRoutes.POST("/users", userHandler.CreateUser)
 	}
 
 	return router
