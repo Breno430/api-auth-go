@@ -22,8 +22,9 @@ type Server struct {
 
 func NewServer(cfg *config.Config, db *gorm.DB) *Server {
 	userRepo := infraRepos.NewUserRepository(db)
+	passwordResetRepo := infraRepos.NewPasswordResetRepositoryImpl(db)
 
-	userUseCase := usecases.NewUserUseCase(userRepo)
+	userUseCase := usecases.NewUserUseCase(userRepo, passwordResetRepo)
 
 	userHandler := handlers.NewUserHandler(userUseCase)
 

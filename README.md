@@ -4,7 +4,7 @@ Uma API de autenticação desenvolvida em Go com Gin, GORM e PostgreSQL.
 
 ## 🚀 Tecnologias
 
-- **Go 1.23.5** - Linguagem de programação
+- **Go** - Linguagem de programação
 - **Gin** - Framework web
 - **GORM** - ORM para Go
 - **PostgreSQL** - Banco de dados
@@ -96,6 +96,10 @@ As variáveis de ambiente são carregadas do arquivo `.env`. O Docker Compose us
 | `DB_NAME` | Nome do banco |
 | `DB_SSLMODE` | Modo SSL do banco |
 | `JWT_SECRET` | Chave secreta do JWT |
+| `EMAIL_FROM` | Email remetente para envio |
+| `EMAIL_PASSWORD` | Senha de app do email |
+| `SMTP_HOST` | Servidor SMTP |
+| `SMTP_PORT` | Porta do servidor SMTP |
 
 **Nota**: No ambiente Docker, o `DB_HOST` é automaticamente definido como `postgres` (nome do container).
 
@@ -125,6 +129,12 @@ DB_SSLMODE=disable
 
 # JWT Configuration
 JWT_SECRET=your-secret-key-change-in-production
+
+# Email Configuration
+EMAIL_FROM=seu-email@gmail.com
+EMAIL_PASSWORD=sua-senha-de-app-gerada
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
 ```
 
 **⚠️ Segurança**: Em produção, sempre altere as senhas padrão e chaves secretas!
@@ -133,13 +143,6 @@ JWT_SECRET=your-secret-key-change-in-production
 
 A API estará disponível em `http://localhost:8080`
 
-### Endpoints de Saúde
-- `GET /health` - Verificar status da API
-
-### Endpoints de Usuário
-- `POST /users/register` - Registrar novo usuário
-- `POST /users/login` - Fazer login
-- `GET /users/profile` - Obter perfil do usuário (requer autenticação)
 
 ## 🗄️ Banco de Dados
 
@@ -217,6 +220,49 @@ api-auth-go/
 ├── Makefile
 ├── .air.toml
 └── .dockerignore
+```
+
+## 📧 Configuração do Serviço de Email
+
+Para configurar o envio de emails, você precisa obter os valores corretos do seu provedor de email:
+
+### 🔧 Como Obter os Valores para Gmail
+
+#### **1. Ativar Autenticação de 2 Fatores**
+1. Acesse: https://myaccount.google.com/security
+2. Ative "Verificação em duas etapas"
+
+#### **2. Gerar Senha de App**
+1. Acesse: https://myaccount.google.com/apppasswords
+2. Selecione "Email" e "Outro (nome personalizado)"
+3. Digite "API Auth Go" como nome
+4. Clique em "Gerar"
+5. **Copie a senha gerada (16 caracteres)**
+
+#### **3. Configurar no .env**
+```env
+EMAIL_FROM=seu-email@gmail.com
+EMAIL_PASSWORD=sua-senha-de-app-gerada
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+```
+
+### 📧 Outros Provedores
+
+#### **Outlook/Hotmail**
+```env
+EMAIL_FROM=seu-email@outlook.com
+EMAIL_PASSWORD=sua-senha-de-app
+SMTP_HOST=smtp-mail.outlook.com
+SMTP_PORT=587
+```
+
+#### **Yahoo**
+```env
+EMAIL_FROM=seu-email@yahoo.com
+EMAIL_PASSWORD=sua-senha-de-app
+SMTP_HOST=smtp.mail.yahoo.com
+SMTP_PORT=587
 ```
 
 ## 🚨 Segurança

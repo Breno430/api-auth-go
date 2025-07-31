@@ -24,6 +24,17 @@ Este documento descreve as variáveis de ambiente utilizadas pela API Auth Go.
 |----------|--------|-----------|
 | `JWT_SECRET` | `your-secret-key` | Chave secreta para assinatura dos tokens JWT |
 
+### Email Configuration
+| Variável | Padrão | Descrição |
+|----------|--------|-----------|
+| `EMAIL_FROM` | - | Email de origem para envio de emails |
+| `EMAIL_PASSWORD` | - | Senha do email de origem |
+| `SMTP_HOST` | - | Host do servidor SMTP |
+| `SMTP_PORT` | - | Porta do servidor SMTP |
+
+### SMS Configuration
+**Nota:** O envio de SMS foi temporariamente desabilitado. A funcionalidade está focada apenas no envio de email.
+
 ## 🔧 Configuração
 
 ### Para Desenvolvimento Local
@@ -58,4 +69,10 @@ DB_SSLMODE=disable
 
 # JWT Configuration
 JWT_SECRET=your-secret-key-change-in-production
+
+# Email Configuration
+EMAIL_FROM=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
 ``` 
