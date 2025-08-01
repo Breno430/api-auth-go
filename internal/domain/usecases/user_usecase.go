@@ -1,11 +1,14 @@
 package usecases
 
 import (
-	"context"
-	"errors"
-
 	"api-auth-go/internal/domain/entities"
 	"api-auth-go/internal/domain/repositories"
+	"api-auth-go/internal/infrastructure/services"
+	"context"
+	"errors"
+	"log"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type CreateUserInput struct {
@@ -18,16 +21,88 @@ type CreateUserOutput struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
 	Email     string `json:"email"`
+	Role      string `json:"role"`
 	CreatedAt string `json:"created_at"`
 }
 
-type UserUseCase struct {
-	userRepo repositories.UserRepository
+type LoginInput struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
 }
 
-func NewUserUseCase(userRepo repositories.UserRepository) *UserUseCase {
+type LoginOutput struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Role      string `json:"role"`
+	CreatedAt string `json:"created_at"`
+	Token     string `json:"token"`
+}
+
+type ResetPasswordInput struct {
+	Token    string `json:"token" validate:"required"`
+	Password string `json:"password" validate:"required,min=6"`
+}
+
+type ResetPasswordOutput struct {
+	Message string `json:"message"`
+}
+
+type RequestPasswordResetInput struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+type RequestPasswordResetOutput struct {
+	Message string `json:"message"`
+}
+
+type ListUsersOutput struct {
+	Users []UserOutput `json:"users"`
+	Total int          `json:"total"`
+	Page  int          `json:"page"`
+	Limit int          `json:"limit"`
+}
+
+type UserOutput struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Role      string `json:"role"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+type UpdateUserInput struct {
+	Name  string `json:"name" validate:"required,min=2,max=100"`
+	Email string `json:"email" validate:"required,email"`
+	Role  string `json:"role" validate:"required,oneof=admin user"`
+}
+
+type UpdateUserOutput struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Role      string `json:"role"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+type DeleteUserOutput struct {
+	Message string `json:"message"`
+}
+
+type UserUseCase struct {
+	userRepo          repositories.UserRepository
+	passwordResetRepo repositories.PasswordResetRepository
+	jwtService        *services.JWTService
+	emailService      *services.EmailService
+}
+
+func NewUserUseCase(userRepo repositories.UserRepository, passwordResetRepo repositories.PasswordResetRepository) *UserUseCase {
 	return &UserUseCase{
-		userRepo: userRepo,
+		userRepo:          userRepo,
+		passwordResetRepo: passwordResetRepo,
+		jwtService:        services.NewJWTService(),
+		emailService:      services.NewEmailService(),
 	}
 }
 
@@ -53,6 +128,279 @@ func (uc *UserUseCase) CreateUser(ctx context.Context, input CreateUserInput) (*
 		ID:        user.ID.String(),
 		Name:      user.Name,
 		Email:     user.Email,
+		Role:      user.Role,
 		CreatedAt: user.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}, nil
+}
+
+func (uc *UserUseCase) Login(ctx context.Context, input LoginInput) (*LoginOutput, error) {
+	if err := entities.ValidateLoginData(input.Email, input.Password); err != nil {
+		return nil, err
+	}
+
+	user, err := uc.userRepo.FindByEmail(ctx, input.Email)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("invalid email or password")
+	}
+
+	if !user.CheckPassword(input.Password) {
+		return nil, errors.New("invalid email or password")
+	}
+
+	token, err := uc.jwtService.GenerateToken(user.ID.String(), user.Email, user.Name, user.Role)
+	if err != nil {
+		return nil, err
+	}
+
+	return &LoginOutput{
+		ID:        user.ID.String(),
+		Name:      user.Name,
+		Email:     user.Email,
+		Role:      user.Role,
+		CreatedAt: user.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		Token:     token,
+	}, nil
+}
+
+func (uc *UserUseCase) ListUsers(ctx context.Context, currentUserID string, filters *entities.UserFilters) (*ListUsersOutput, error) {
+	if err := entities.ValidateUUID(currentUserID); err != nil {
+		return nil, err
+	}
+
+	if err := entities.ValidateUserFilters(filters); err != nil {
+		return nil, err
+	}
+
+	currentUser, err := uc.userRepo.FindByID(ctx, currentUserID)
+	if err != nil {
+		return nil, err
+	}
+	if currentUser == nil {
+		return nil, errors.New("current user not found")
+	}
+
+	if currentUser.IsAdmin() {
+		users, err := uc.userRepo.FindAllWithFilters(ctx, filters)
+		if err != nil {
+			return nil, err
+		}
+
+		var userOutputs []UserOutput
+		for _, user := range users {
+			userOutputs = append(userOutputs, UserOutput{
+				ID:        user.ID.String(),
+				Name:      user.Name,
+				Email:     user.Email,
+				Role:      user.Role,
+				CreatedAt: user.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+				UpdatedAt: user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			})
+		}
+
+		return &ListUsersOutput{
+			Users: userOutputs,
+			Total: len(userOutputs),
+			Page:  filters.Page,
+			Limit: filters.Limit,
+		}, nil
+	}
+
+	userOutput := UserOutput{
+		ID:        currentUser.ID.String(),
+		Name:      currentUser.Name,
+		Email:     currentUser.Email,
+		Role:      currentUser.Role,
+		CreatedAt: currentUser.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt: currentUser.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}
+
+	return &ListUsersOutput{
+		Users: []UserOutput{userOutput},
+		Total: 1,
+		Page:  1,
+		Limit: 1,
+	}, nil
+}
+
+func (uc *UserUseCase) GetUserByID(ctx context.Context, userID string) (*UserOutput, error) {
+	if err := entities.ValidateUUID(userID); err != nil {
+		return nil, err
+	}
+
+	user, err := uc.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	return &UserOutput{
+		ID:        user.ID.String(),
+		Name:      user.Name,
+		Email:     user.Email,
+		Role:      user.Role,
+		CreatedAt: user.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt: user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}, nil
+}
+
+func (uc *UserUseCase) UpdateUser(ctx context.Context, userID string, input UpdateUserInput) (*UpdateUserOutput, error) {
+	if err := entities.ValidateUUID(userID); err != nil {
+		return nil, err
+	}
+
+	if err := entities.ValidateUpdateUserInput(input.Name, input.Email, input.Role); err != nil {
+		return nil, err
+	}
+
+	user, err := uc.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	if input.Email != user.Email {
+		exists, err := uc.userRepo.ExistsByEmail(ctx, input.Email)
+		if err != nil {
+			return nil, err
+		}
+		if exists {
+			return nil, errors.New("email already exists")
+		}
+	}
+
+	user.Name = input.Name
+	user.Email = input.Email
+	user.Role = input.Role
+
+	if err := uc.userRepo.Update(ctx, user); err != nil {
+		return nil, err
+	}
+
+	return &UpdateUserOutput{
+		ID:        user.ID.String(),
+		Name:      user.Name,
+		Email:     user.Email,
+		Role:      user.Role,
+		UpdatedAt: user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}, nil
+}
+
+func (uc *UserUseCase) DeleteUser(ctx context.Context, userID string) (*DeleteUserOutput, error) {
+	if err := entities.ValidateUUID(userID); err != nil {
+		return nil, err
+	}
+
+	user, err := uc.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	if err := uc.userRepo.Delete(ctx, userID); err != nil {
+		return nil, err
+	}
+
+	return &DeleteUserOutput{
+		Message: "User deleted successfully",
+	}, nil
+}
+
+func (uc *UserUseCase) RequestPasswordReset(ctx context.Context, input RequestPasswordResetInput) (*RequestPasswordResetOutput, error) {
+	if err := entities.ValidateEmail(input.Email); err != nil {
+		return nil, err
+	}
+
+	user, err := uc.userRepo.FindByEmail(ctx, input.Email)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return &RequestPasswordResetOutput{
+			Message: "Se o email existir, você receberá um código de verificação por email.",
+		}, nil
+	}
+
+	existingReset, err := uc.passwordResetRepo.FindByUserID(ctx, user.ID.String())
+	if err != nil {
+		return nil, err
+	}
+
+	if existingReset != nil && existingReset.IsValid() {
+		return &RequestPasswordResetOutput{
+			Message: "Um código de verificação já foi enviado. Aguarde 15 minutos para solicitar um novo.",
+		}, nil
+	}
+
+	passwordReset, err := entities.NewPasswordReset(user.ID, user.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := uc.passwordResetRepo.Create(ctx, passwordReset); err != nil {
+		return nil, err
+	}
+
+	go func() {
+		if err := uc.emailService.SendPasswordResetEmail(user.Email, user.Name, passwordReset.Token); err != nil {
+			log.Printf("Error sending password reset email: %v", err)
+		}
+	}()
+
+	return &RequestPasswordResetOutput{
+		Message: "Código de verificação enviado por email.",
+	}, nil
+}
+
+func (uc *UserUseCase) ResetPassword(ctx context.Context, input ResetPasswordInput) (*ResetPasswordOutput, error) {
+	if err := entities.ValidateResetPasswordInput(input.Token, input.Password); err != nil {
+		return nil, err
+	}
+
+	passwordReset, err := uc.passwordResetRepo.FindByToken(ctx, input.Token)
+	if err != nil {
+		return nil, err
+	}
+	if passwordReset == nil {
+		return nil, errors.New("invalid or expired token")
+	}
+
+	user, err := uc.userRepo.FindByID(ctx, passwordReset.UserID.String())
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	if err := passwordReset.ValidateToken(input.Token); err != nil {
+		return nil, err
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+
+	user.Password = string(hashedPassword)
+	if err := uc.userRepo.Update(ctx, user); err != nil {
+		return nil, err
+	}
+
+	passwordReset.MarkAsUsed()
+	if err := uc.passwordResetRepo.Update(ctx, passwordReset); err != nil {
+		return nil, err
+	}
+
+	return &ResetPasswordOutput{
+		Message: "Senha alterada com sucesso.",
 	}, nil
 }

@@ -19,7 +19,7 @@ func NewConnection(databaseURL string) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	if err := db.AutoMigrate(&entities.User{}); err != nil {
+	if err := db.AutoMigrate(&entities.User{}, &entities.PasswordReset{}); err != nil {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
 
