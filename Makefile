@@ -28,7 +28,7 @@ define print_header
 endef
 
 # Comandos principais
-.PHONY: help up up-d down logs shell clean check-env setup
+.PHONY: help up up-d down logs shell clean check-env setup seed-admin
 
 # Comando padrão
 help: ## Mostrar esta ajuda
@@ -87,6 +87,10 @@ setup: ## Configurar ambiente de desenvolvimento
 	fi
 	$(GO) mod download
 	$(call print_info,"Ambiente configurado!")
+
+seed-admin: ## Criar usuário admin inicial
+	$(call print_info,"Criando usuário admin...")
+	$(GO) run cmd/seed/main.go
 
 # Default target
 .DEFAULT_GOAL := help 
